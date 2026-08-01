@@ -1,0 +1,17 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Tokenizer and dataset files
+data/tinystories.txt
+data/tinystories_tokenizer.vocab
+data/tinystories_tokenizer.model
+data/tinystories_train.bin
+
