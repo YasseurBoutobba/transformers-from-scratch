@@ -10,8 +10,12 @@ wheels/
 .venv
 
 # Tokenizer and dataset files
-data/tinystories.txt
-data/tinystories_tokenizer.vocab
-data/tinystories_tokenizer.model
-data/tinystories_train.bin
+data/*.txt
+data/*.bin
+data/*.vocab
+data/*.model
+
+# Checkpoints and logs
+checkpoints/
+logs/
 

@@ -21,7 +21,7 @@ class ScaledDotProductAttention(nn.Module):
 
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, d_model, n_head, dropout):
+    def __init__(self, d_model, n_head, dropout=0.1):
         super().__init__()
         self.d_model = d_model
         assert d_model % n_head == 0
