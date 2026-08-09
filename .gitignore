@@ -14,8 +14,11 @@ data/*.txt
 data/*.bin
 data/*.vocab
 data/*.model
+data/*_lengths.npy
 
 # Checkpoints and logs
 checkpoints/
 logs/
 
+# Training notebook
+train_colab.ipynb

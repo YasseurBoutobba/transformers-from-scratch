@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import sentencepiece as spm
 import torch
+import tqdm
 from datasets import load_dataset
 from datasets.dataset_dict import DatasetDict
 from torch.utils.data import Dataset
@@ -32,25 +33,40 @@ def build_tokenizer():
         print("Tokenizer already exists, skipping build.")
 
 
-def tokenize_and_flatten(split):
+def tokenize_and_flatten(split, batch_size=1000):
     if not Path("data/tinystories_tokenizer.model").exists():
         build_tokenizer()
 
     sp = spm.SentencePieceProcessor(model_file="data/tinystories_tokenizer.model")
 
-    if not Path("data/tinystories_" + split + ".bin").exists():
-        print(f"Tokenizing and flattening {split} split...")
-
-        all_ids = []
-        for row in ds[split]:
-            ids = sp.encode(row["text"], out_type=int)
-            all_ids.append(2)
-            all_ids.extend(ids)
-            all_ids.append(3)
-        train_ids = np.array(all_ids, dtype=np.uint16)
-        train_ids.tofile("data/tinystories_" + split + ".bin")
-    else:
+    out_path = "data/tinystories_" + split + ".bin"
+    if Path(out_path).exists():
         print(f"Tokenized and flattened {split} split already exists, skipping.")
+        return
+
+    print(f"Tokenizing and flattening {split} split...")
+
+    texts = ds[split]["text"]
+    n = len(texts)
+
+    with open(out_path, "wb") as f_out:
+        for start in tqdm.tqdm(range(0, n, batch_size)):
+            batch = texts[start : start + batch_size]
+            batch = [t.replace("\n", " ") for t in batch]
+
+            
+            encoded_batch = sp.encode(batch, out_type=int)
+
+            chunk_ids = []
+            for ids in encoded_batch:
+                chunk_ids.append(2)
+                chunk_ids.extend(ids)
+                chunk_ids.append(3)
+
+            arr = np.array(chunk_ids, dtype=np.uint16)
+            arr.tofile(f_out)  # append mode via open 'wb' + repeated writes
+
+    print(f"Done writing {out_path}")
 
 
 class TokenDataset(Dataset):
