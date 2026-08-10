@@ -38,13 +38,14 @@ class MultiHeadAttention(nn.Module):
 
     def forward(self, q, k, v, mask):
         batch_size, seq_len, _ = q.shape
+        _, k_len, _ = k.shape
         query = self.w_q(q)
         key = self.w_k(k)
         value = self.w_v(v)
 
         query = query.view(batch_size, seq_len, self.n_head, self.d_k).transpose(1, 2)
-        key = key.view(batch_size, seq_len, self.n_head, self.d_k).transpose(1, 2)
-        value = value.view(batch_size, seq_len, self.n_head, self.d_k).transpose(1, 2)
+        key = key.view(batch_size, k_len, self.n_head, self.d_k).transpose(1, 2)
+        value = value.view(batch_size, k_len, self.n_head, self.d_k).transpose(1, 2)
 
         x, _ = self.attention_head.forward(query, key, value, mask)
 

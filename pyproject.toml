@@ -8,6 +8,7 @@ dependencies = [
     "datasets>=5.0.0",
     "numpy>=2.5.1",
     "pydantic>=2.13.4",
+    "rich>=15.0.0",
     "sentencepiece>=0.2.2",
     "torch>=2.13.0",
     "tqdm>=4.68.4",

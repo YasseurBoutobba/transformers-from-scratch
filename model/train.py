@@ -54,8 +54,8 @@ def train_gen():
 
     checkpoint_dir = Path("checkpoints")
     checkpoint_dir.mkdir(exist_ok=True)
-    latest_checkpoint_path = checkpoint_dir / "latest_checkpoint.pt"
-    best_checkpoint_path = checkpoint_dir / "best_checkpoint.pt"
+    latest_checkpoint_path = checkpoint_dir / "latest_checkpoint_gen.pt"
+    best_checkpoint_path = checkpoint_dir / "best_checkpoint_gen.pt"
 
     best_val_loss = float("inf")
     config = ModelConfig()
@@ -151,19 +151,19 @@ def train_gen():
 
 
 @torch.no_grad()
-def evaluate_translation(
-    model, val_loader, loss_fn, src_mask, tgt_mask, config, device, max_batches=50
-):
+def evaluate_translation(model, val_loader, loss_fn, config, device, max_batches=50):
     model.eval()
     total_loss = 0.0
     n_batches = 0
-    for i, (src, tgt_in, tgt_out) in enumerate(val_loader):
+    for i, (src, tgt_in, tgt_out, _, _) in enumerate(val_loader):
         if i >= max_batches:
             break
         src, tgt, y = src.to(device), tgt_in.to(device), tgt_out.to(device)
+        src_mask = make_src_mask(src).to(device)
+        tgt_mask = make_tgt_mask(tgt_in).to(device)
         with torch.autocast(device_type="mps", dtype=torch.bfloat16):
             logits = model(src, tgt, src_mask, tgt_mask)
-            loss = loss_fn(logits.view(-1, config.vocab_size), y.view(-1))
+            loss = loss_fn(logits.view(-1, TGT_VOCAB_SIZE), y.view(-1))
         total_loss += loss.item()
         n_batches += 1
     model.train()
@@ -185,8 +185,8 @@ def train_translation():
 
     checkpoint_dir = Path("checkpoints")
     checkpoint_dir.mkdir(exist_ok=True)
-    latest_checkpoint_path = checkpoint_dir / "latest_checkpoint.pt"
-    best_checkpoint_path = checkpoint_dir / "best_checkpoint.pt"
+    latest_checkpoint_path = checkpoint_dir / "latest_checkpoint_translation.pt"
+    best_checkpoint_path = checkpoint_dir / "best_checkpoint_translation.pt"
 
     best_val_loss = float("inf")
     config = ModelConfig()
@@ -224,15 +224,16 @@ def train_translation():
         epoch_loss = 0.0
         progress_bar = tqdm.tqdm(train_loader, desc=f"Epoch {epoch}", leave=True)
 
-        for batch_idx, (src, tgt_in, tgt_out) in enumerate(progress_bar):
+        for batch_idx, (src, tgt_in, tgt_out, _, _) in enumerate(progress_bar):
             start = time.time()
 
             src, tgt, y = src.to(device), tgt_in.to(device), tgt_out.to(device)
             src_mask = make_src_mask(src).to(device)
             tgt_mask = make_tgt_mask(tgt_in).to(device)
+
             with torch.autocast(device_type="mps", dtype=torch.bfloat16):
                 logits = model(src, tgt, src_mask, tgt_mask)
-                loss = loss_fn(logits.view(-1, config.vocab_size), y.view(-1))
+                loss = loss_fn(logits.view(-1, TGT_VOCAB_SIZE), y.view(-1))
             optimizer.zero_grad()
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -264,9 +265,7 @@ def train_translation():
             latest_checkpoint_path,
         )
         tqdm.tqdm.write(f"Epoch {epoch} completed. Average Loss: {epoch_loss:.4f}")
-        val_loss = evaluate_translation(
-            model, val_loader, loss_fn, src_mask, tgt_mask, config, device
-        )
+        val_loss = evaluate_translation(model, val_loader, loss_fn, config, device)
         tqdm.tqdm.write(f"Validation Loss after Epoch {epoch}: {val_loss:.4f}")
 
         if val_loss < best_val_loss:

@@ -114,15 +114,16 @@ class EncoderDecoderTransfomer(nn.Module):
         self.tgt_positional_encoding = PositionalEncoding(d_model, seq_len, dropout)
         self.output_layer = nn.Linear(d_model, tgt_vocab_size)
 
-    def forward(self, src, tgt, src_mask, tgt_mask):
+    def encoder(self, src, src_mask):
         enc_x = self.input_embedding(src)
         enc_x = self.src_positional_encoding(enc_x)
 
         for layer in self.enc_layers:
-            enc_x = layer(src, src_mask)
-
+            enc_x = layer(enc_x, src_mask)
         encoder_output = enc_x
+        return encoder_output
 
+    def decoder(self, tgt, encoder_output, src_mask, tgt_mask):
         dec_x = self.output_embedding(tgt)
         dec_x = self.tgt_positional_encoding(dec_x)
 
@@ -130,4 +131,9 @@ class EncoderDecoderTransfomer(nn.Module):
             dec_x = layer(dec_x, encoder_output, src_mask, tgt_mask)
 
         logits = self.output_layer(dec_x)
+        return logits
+
+    def forward(self, src, tgt, src_mask, tgt_mask):
+        encoder_output = self.encoder(src, src_mask)
+        logits = self.decoder(tgt, encoder_output, src_mask, tgt_mask)
         return logits

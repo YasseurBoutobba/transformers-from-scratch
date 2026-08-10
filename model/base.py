@@ -14,7 +14,7 @@ class InputEmbedding(nn.Module):
         self.embedding = nn.Embedding(vocab_size, d_model)
 
     def forward(self, x):
-        return self.embedding(x) * (math.sqrt(self.d_model))
+        return self.embedding(x)
 
 
 class PositionalEncoding(nn.Module):
@@ -62,7 +62,7 @@ class FeedForward(nn.Module):
 class ResidualConnection(nn.Module):
     def __init__(self, d_model, dropout=0.1):
         super().__init__()
-        self.layer_norm = nn.LayerNorm(d_model)
+        self.layer_norm = nn.LayerNorm(normalized_shape=d_model)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, sublayer):
